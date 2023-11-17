@@ -7,6 +7,14 @@ import (
 	"github.com/go-toho/toho/logger"
 )
 
+const (
+	// nameKey is used to log the `WithName` values as an additional attribute.
+	nameKey = "logger"
+
+	// errKey is used to log the error parameter of Error as an additional attribute.
+	errKey = "err"
+)
+
 func New(config logger.Config, handlers ...slog.Handler) (slog.Logger, error) {
 	if len(handlers) == 0 || handlers[0] == nil {
 		handler, err := NewHandler(config)
@@ -34,4 +42,17 @@ func NewHandler(config logger.Config) (slog.Handler, error) {
 	}
 
 	return slog.NewJSONHandler(os.Stdout, opts), nil
+}
+
+// WithName returns a new Logger instance with the specified name element added
+// to the Logger's name.  Successive calls with WithName result in duplicate
+// name attributes, and should be avoided.  It's strongly recommended that name
+// segments contain only letters, digits, and hyphens.
+func WithName(l *slog.Logger, name string) *slog.Logger {
+	return l.With(slog.String(nameKey, name))
+}
+
+// Err returns an slog.Attr for the supplied error.
+func Err(err error) slog.Attr {
+	return slog.Any(errKey, err)
 }
