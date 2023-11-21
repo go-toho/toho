@@ -19,6 +19,8 @@ var Module = fx.Module("slog",
 	provideFxEventLogger,
 )
 
+var FxPrinterLogger = fx.Provide(newLoggerPrinter)
+
 var FxEventLogger = fx.WithLogger(newFxEventLogger)
 
 var (
@@ -61,6 +63,25 @@ var (
 		),
 	)
 )
+
+type loggerPrinter struct {
+	l *slog.Logger
+}
+
+func newLoggerPrinter(logger *slog.Logger) fx.Printer {
+	return loggerPrinter{l: logger}
+}
+
+func (p loggerPrinter) Printf(msg string, args ...interface{}) {
+	log := p.l.Info
+	for i := 0; i < len(args); i = i + 2 {
+		if k, ok := args[i].(string); ok && k == "err" {
+			log = p.l.Error
+			break
+		}
+	}
+	log(msg, args...)
+}
 
 type setupLoggerWrapper struct {
 	*slog.Logger
