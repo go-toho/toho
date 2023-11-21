@@ -63,7 +63,7 @@ var (
 )
 
 type setupLoggerWrapper struct {
-	slog.Logger
+	*slog.Logger
 }
 
 func newSetupLoggerWrapper(config *logger.Config) (*setupLoggerWrapper, error) {
@@ -74,7 +74,7 @@ func newSetupLoggerWrapper(config *logger.Config) (*setupLoggerWrapper, error) {
 	return &setupLoggerWrapper{Logger: logger}, nil
 }
 
-func newSlogFxEventLogger(logger slog.Logger) fxevent.Logger {
+func newSlogFxEventLogger(logger *slog.Logger) fxevent.Logger {
 	slogLogger := &slogofxevent.SlogLogger{Logger: logger}
 	slogLogger.UseLogLevel(slog.LevelDebug)
 	return slogLogger

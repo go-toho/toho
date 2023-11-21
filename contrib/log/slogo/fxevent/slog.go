@@ -10,7 +10,7 @@ import (
 
 // SlogLogger is an Fx event logger that logs events to Zap.
 type SlogLogger struct {
-	Logger slog.Logger
+	Logger *slog.Logger
 
 	logLevel   slog.Level // default: slog.LevelInfo
 	errorLevel *slog.Level
