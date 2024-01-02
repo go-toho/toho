@@ -15,6 +15,10 @@ const (
 	errKey = "err"
 )
 
+func NewDefault(handlers ...slog.Handler) (*slog.Logger, error) {
+	return New(*logger.DefaultConfig, handlers...)
+}
+
 func New(config logger.Config, handlers ...slog.Handler) (*slog.Logger, error) {
 	if len(handlers) == 0 || handlers[0] == nil {
 		handler, err := NewHandler(config)
