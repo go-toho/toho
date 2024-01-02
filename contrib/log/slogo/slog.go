@@ -52,6 +52,11 @@ func WithName(l *slog.Logger, name string) *slog.Logger {
 	return l.With(slog.String(nameKey, name))
 }
 
+// Name returns an slog.Attr for the specified name.
+func Name(name string) slog.Attr {
+	return slog.String(nameKey, name)
+}
+
 // Err returns an slog.Attr for the supplied error.
 func Err(err error) slog.Attr {
 	return slog.Any(errKey, err)
