@@ -75,7 +75,7 @@ func newLoggerPrinter(logger *slog.Logger) fx.Printer {
 func (p loggerPrinter) Printf(msg string, args ...interface{}) {
 	log := p.l.Info
 	for i := 0; i < len(args); i = i + 2 {
-		if k, ok := args[i].(string); ok && k == "err" {
+		if k, ok := args[i].(string); ok && k == "error" {
 			log = p.l.Error
 			break
 		}
