@@ -62,6 +62,15 @@ func SupplyConfigFiles(files []string) fx.Option {
 	)
 }
 
+func SupplyConfig(cfg any) fx.Option {
+	return fx.Provide(
+		fx.Annotate(
+			func() any { return cfg },
+			fx.ResultTags(fxtags.Named(config.NamedConfigPointerOut)),
+		),
+	)
+}
+
 func provideConfigPointer(c any) fx.Option {
 	return fx.Provide(
 		fx.Annotate(
