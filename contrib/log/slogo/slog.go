@@ -12,7 +12,7 @@ const (
 	nameKey = "logger"
 
 	// errKey is used to log the error parameter of Error as an additional attribute.
-	errKey = "err"
+	errKey = "error"
 )
 
 func NewDefault(handlers ...slog.Handler) (*slog.Logger, error) {
