@@ -166,16 +166,23 @@ func (a *TohoApp[C, L]) Stop() error {
 }
 
 // Wait blocks application until termination.
-func (a *TohoApp[C, L]) Wait() error {
+func (a *TohoApp[C, L]) Wait() <-chan error {
 	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	ch := make(chan error, 1)
+
 	if !a.bootstrap {
-		return errNotStarted
+		ch <- errNotStarted
+		return ch
 	}
-	a.mu.Unlock()
 
-	signal := a.core.Wait()
+	go func() {
+		signal := <-a.core.Wait()
+		ch <- xos.SignalError{Signal: signal}
+	}()
 
-	return xos.SignalError{Signal: signal}
+	return ch
 }
 
 func callLifecycleFn(ctx context.Context, fns []func(context.Context) error) error {

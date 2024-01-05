@@ -80,6 +80,6 @@ func (s *fxCore) Stop(ctx context.Context) error {
 	return s.instance.Stop(stopCtx)
 }
 
-func (s *fxCore) Wait() os.Signal {
-	return <-s.instance.Done()
+func (s *fxCore) Wait() <-chan os.Signal {
+	return s.instance.Done()
 }

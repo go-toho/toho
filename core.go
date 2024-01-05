@@ -38,7 +38,7 @@ type Core interface {
 	Stop(context.Context) error
 
 	// Wait for termination of interrupt signals.
-	Wait() os.Signal
+	Wait() <-chan os.Signal
 }
 
 // defaultCore struct is the default implementation of the Core interface.
@@ -66,14 +66,10 @@ func (defaultCore) Stop(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func (defaultCore) Wait() os.Signal {
+func (defaultCore) Wait() <-chan os.Signal {
 	ch := make(chan os.Signal, 1)
 
 	signal.Notify(ch, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	sig := <-ch
-	signal.Stop(ch)
-	close(ch)
-
-	return sig
+	return ch
 }
