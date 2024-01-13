@@ -2,6 +2,8 @@ package slogofx
 
 import (
 	"log/slog"
+	"reflect"
+	"strings"
 
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -23,6 +25,8 @@ var FxPrinterLogger = fx.Provide(newLoggerPrinter)
 
 var FxEventLogger = fx.WithLogger(newFxEventLogger)
 
+var TrimDefaultHandler = trimDefaultHandler
+
 var (
 	invokeHandlersCountCheck = fx.Invoke(
 		fx.Annotate(
@@ -42,6 +46,23 @@ var (
 			func(config logger.Config) (slog.Handler, error) {
 				return slogo.NewHandler(config)
 			},
+			fx.ResultTags(fxtags.Group(slogo.GroupSlogHandler)),
+		),
+	)
+
+	trimDefaultHandler = fx.Decorate(
+		fx.Annotate(
+			func(handlers []slog.Handler) []slog.Handler {
+				if len(handlers) > 1 {
+					for _, h := range handlers {
+						if !strings.Contains(reflect.ValueOf(h).Type().String(), "*slog.") {
+							return []slog.Handler{h}
+						}
+					}
+				}
+				return handlers
+			},
+			fx.ParamTags(fxtags.Group(slogo.GroupSlogHandler)),
 			fx.ResultTags(fxtags.Group(slogo.GroupSlogHandler)),
 		),
 	)
