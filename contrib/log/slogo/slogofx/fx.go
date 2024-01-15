@@ -27,6 +27,8 @@ var FxEventLogger = fx.WithLogger(newFxEventLogger)
 
 var TrimDefaultHandler = trimDefaultHandler
 
+var SetAsDefaultLogger = fx.Invoke(setAsDefaultLogger)
+
 var (
 	invokeHandlersCountCheck = fx.Invoke(
 		fx.Annotate(
@@ -84,6 +86,10 @@ var (
 		),
 	)
 )
+
+func setAsDefaultLogger(logger *slog.Logger) {
+	slog.SetDefault(logger)
+}
 
 type loggerPrinter struct {
 	l *slog.Logger
