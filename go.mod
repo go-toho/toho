@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/cristalhq/aconfig v0.18.6
-	go.uber.org/fx v1.22.2
+	go.uber.org/fx v1.23.0
 )
 
 require (
