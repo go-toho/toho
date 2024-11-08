@@ -29,6 +29,12 @@ var TrimDefaultHandler = trimDefaultHandler
 
 var SetAsDefaultLogger = fx.Invoke(setAsDefaultLogger)
 
+func DecorateWithName(names ...string) fx.Option {
+	return fx.Decorate(func(log *slog.Logger) *slog.Logger {
+		return slogo.WithName(log, strings.Join(names, "/"))
+	})
+}
+
 var (
 	invokeHandlersCountCheck = fx.Invoke(
 		fx.Annotate(
