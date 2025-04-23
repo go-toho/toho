@@ -3,7 +3,7 @@ module github.com/go-toho/toho
 go 1.21
 
 require (
-	github.com/cristalhq/aconfig v0.18.6
+	github.com/cristalhq/aconfig v0.18.7
 	go.uber.org/fx v1.23.0
 )
 
