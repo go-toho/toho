@@ -15,6 +15,17 @@ const (
 	errKey = "error"
 )
 
+// ParseLevel parses a level based on the number or ASCII representation of the
+// log level. If the provided representation is invalid an error is returned.
+//
+// This is particularly useful when dealing with text input to configure log
+// levels.
+func ParseLevel(level string) (slog.Level, error) {
+	var l slog.Level
+	err := l.UnmarshalText([]byte(level))
+	return l, err
+}
+
 func NewDefault(handlers ...slog.Handler) (*slog.Logger, error) {
 	return New(*logger.DefaultConfig, handlers...)
 }
@@ -31,8 +42,8 @@ func New(config logger.Config, handlers ...slog.Handler) (*slog.Logger, error) {
 }
 
 func NewHandler(config logger.Config) (slog.Handler, error) {
-	var level slog.Level
-	if err := level.UnmarshalText([]byte(config.Level)); err != nil {
+	level, err := ParseLevel(config.Level)
+	if err != nil {
 		return nil, err
 	}
 
