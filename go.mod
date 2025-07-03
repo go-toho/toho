@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.24.4
 
 require (
-	github.com/cristalhq/aconfig v0.18.7
+	github.com/cristalhq/aconfig v0.19.0
 	go.uber.org/fx v1.24.0
 )
 
