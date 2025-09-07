@@ -2,7 +2,7 @@ module github.com/go-toho/toho
 
 go 1.22
 
-toolchain go1.25.0
+toolchain go1.25.1
 
 require (
 	github.com/cristalhq/aconfig v0.19.0
