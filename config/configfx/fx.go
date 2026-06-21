@@ -84,9 +84,14 @@ func structInnerConfigProviders(structure any) []fx.Option {
 	var opts []fx.Option
 	inputType := reflect.TypeOf(structure)
 	if inputType != nil {
-		if inputType.Kind() == reflect.Ptr {
+		if inputType.Kind() == reflect.Pointer {
 			if inputType.Elem().Kind() == reflect.Struct {
-				return appendConfigStructProvider(opts, reflect.ValueOf(structure).Elem(), config.NamedConfigPointerOut)
+				inputValue := reflect.ValueOf(structure)
+				if inputValue.IsNil() {
+					return opts
+				}
+
+				return appendConfigStructProvider(opts, inputValue.Elem(), config.NamedConfigPointerOut)
 			}
 		}
 	}
@@ -95,16 +100,26 @@ func structInnerConfigProviders(structure any) []fx.Option {
 
 func appendConfigStructProvider(opts []fx.Option, s reflect.Value, paramName string) []fx.Option {
 	for i := 0; i < s.NumField(); i++ {
-		typeName := s.Type().Field(i).Type.String()
+		field := s.Field(i)
+		fieldType := s.Type().Field(i).Type
+		typeName := fieldType.String()
 
-		if s.Type().Field(i).Type.Kind() == reflect.Struct {
+		if fieldType.Kind() == reflect.Struct {
 			if strings.HasSuffix(strings.ToLower(typeName), configStructSuffix) {
+				if !field.CanInterface() {
+					continue
+				}
+
 				opts = append(opts, innerConfigStructProvider(paramName, typeName, i))
-				opts = appendConfigStructProvider(opts, s.Field(i), typeName)
+				opts = appendConfigStructProvider(opts, field, typeName)
 			}
-		} else if s.Type().Field(i).Type.Kind() == reflect.Ptr {
-			if !s.Field(i).IsZero() && s.Field(i).Elem().Type().Kind() == reflect.Struct {
-				return appendConfigStructProvider(opts, s.Field(i).Elem(), paramName)
+		} else if fieldType.Kind() == reflect.Pointer {
+			if !field.CanInterface() {
+				continue
+			}
+			if !field.IsZero() && field.Elem().Type().Kind() == reflect.Struct {
+				opts = appendConfigStructProvider(opts, field.Elem(), paramName)
+				continue
 			}
 		}
 	}
@@ -120,7 +135,7 @@ func innerConfigStructProvider(inName, outName string, fieldIndex int) fx.Option
 					return nil
 				}
 				s := reflect.ValueOf(c)
-				if s.Kind() == reflect.Ptr {
+				if s.Kind() == reflect.Pointer {
 					if !s.IsZero() && s.Elem().Type().Kind() == reflect.Struct {
 						s = s.Elem()
 					} else {

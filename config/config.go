@@ -14,7 +14,12 @@ func StructCheck(structure any) error {
 	inputType := reflect.TypeOf(structure)
 
 	if inputType != nil {
-		indirectValue := reflect.Indirect(reflect.ValueOf(structure))
+		inputValue := reflect.ValueOf(structure)
+		if inputValue.Kind() == reflect.Pointer && inputValue.IsNil() {
+			return errors.New("config: struct nil")
+		}
+
+		indirectValue := reflect.Indirect(inputValue)
 		if indirectValue.Kind() != reflect.Struct {
 			return fmt.Errorf("config: expecting struct, got '%s'", indirectValue.Kind().String())
 		}
