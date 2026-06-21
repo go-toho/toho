@@ -88,40 +88,44 @@ func (a *TohoApp[C, L]) Logger() L {
 
 // Start executes all OnStart hooks registered with the application's Lifecycle.
 func (a *TohoApp[C, L]) Start() error {
-	a.mu.Lock()
-	if a.bootstrap {
-		return errAlreadyStarted
-	}
+	if err := func() error {
+		a.mu.Lock()
+		defer a.mu.Unlock()
 
-	if a.opts.logger != nil {
-		// handle manually configured logger
-		if log, ok := a.opts.logger.(L); ok {
-			a.log = log
+		if a.bootstrap {
+			return errAlreadyStarted
 		}
-	}
 
-	coreOpts := &CoreOptions{
-		App:           *a.appInfo,
-		ConfigPointer: &a.config,
-		LogPointer:    &a.log,
-		Options:       a.opts.options,
-		StartTimeout:  a.opts.startTimeout,
-		StopTimeout:   a.opts.stopTimeout,
-	}
+		if a.opts.logger != nil {
+			// handle manually configured logger
+			if log, ok := a.opts.logger.(L); ok {
+				a.log = log
+			}
+		}
 
-	if err := a.core.Init(coreOpts); err != nil {
-		return fmt.Errorf("%s: %w", reflect.TypeOf(a.core), err)
-	}
+		coreOpts := &CoreOptions{
+			App:           *a.appInfo,
+			ConfigPointer: &a.config,
+			LogPointer:    &a.log,
+			Options:       a.opts.options,
+			StartTimeout:  a.opts.startTimeout,
+			StopTimeout:   a.opts.stopTimeout,
+		}
 
-	// fallback logger
-	if reflect.ValueOf(a.log).IsNil() {
-		if _, ok := any(a.log).(*slog.Logger); ok {
+		if err := a.core.Init(coreOpts); err != nil {
+			return fmt.Errorf("%s: %w", reflect.TypeOf(a.core), err)
+		}
+
+		// fallback logger
+		if log, ok := any(a.log).(*slog.Logger); ok && log == nil {
 			a.log = any(slog.Default()).(L)
 		}
-	}
 
-	a.bootstrap = true
-	a.mu.Unlock()
+		a.bootstrap = true
+		return nil
+	}(); err != nil {
+		return err
+	}
 
 	if err := callLifecycleFn(a.ctx, a.opts.beforeStart); err != nil {
 		return err
@@ -140,11 +144,17 @@ func (a *TohoApp[C, L]) Start() error {
 
 // Stop gracefully stops the application.
 func (a *TohoApp[C, L]) Stop() error {
-	a.mu.Lock()
-	if !a.bootstrap {
-		return errNotStarted
+	if err := func() error {
+		a.mu.Lock()
+		defer a.mu.Unlock()
+
+		if !a.bootstrap {
+			return errNotStarted
+		}
+		return nil
+	}(); err != nil {
+		return err
 	}
-	a.mu.Unlock()
 
 	if err := callLifecycleFn(a.ctx, a.opts.beforeStop); err != nil {
 		return err
