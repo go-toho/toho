@@ -57,7 +57,7 @@ func (l *Loader) WithFileDecoder(decoder aconfig.FileDecoder) *Loader {
 func (l *Loader) For(cfg any) *aconfig.Loader {
 	// remove duplicate files
 	slices.Sort(l.Files)
-	slices.Compact(l.Files)
+	l.Files = slices.Compact(l.Files)
 
 	c := l.Config
 
