@@ -13,9 +13,6 @@ import (
 	"github.com/go-toho/toho/logger/loggerfx"
 )
 
-// Deprecated: use NewCore to create a separate Fx core per app.
-var FxCore = &fxCore{}
-
 func NewCore() toho.Core {
 	return &fxCore{}
 }
