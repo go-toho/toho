@@ -11,10 +11,11 @@ import (
 )
 
 var examples = []struct {
-	name  string
-	pkg   string
-	deps  []string
-	avoid []string
+	name     string
+	pkg      string
+	deps     []string
+	avoid    []string
+	contains []string
 }{
 	{
 		name:  "minimal",
@@ -25,6 +26,15 @@ var examples = []struct {
 		name: "fx",
 		pkg:  "./examples/fx",
 		deps: []string{"go.uber.org/fx"},
+	},
+	{
+		name: "fx-full",
+		pkg:  "./examples/fx-full",
+		deps: []string{"go.uber.org/fx"},
+		contains: []string{
+			"application wired",
+			"ready app=orders-api env=local metrics=toho_fx_example runs=1",
+		},
 	},
 }
 
@@ -47,6 +57,38 @@ func TestExamplesImportBoundary(t *testing.T) {
 			for _, avoid := range example.avoid {
 				if hasDependency(deps, avoid) {
 					t.Fatalf("%s example depends on %s:\n%s", example.name, avoid, deps)
+				}
+			}
+		})
+	}
+}
+
+func TestExamples(t *testing.T) {
+	goBin, err := exec.LookPath("go")
+	if err != nil {
+		t.Skip("go binary not available")
+	}
+
+	root := repoRoot(t)
+	for _, example := range examples {
+		if len(example.contains) == 0 {
+			continue
+		}
+
+		t.Run(example.name, func(t *testing.T) {
+			cmd := exec.Command(goBin, "run", example.pkg)
+			cmd.Dir = root
+			cmd.Env = append(os.Environ(), "GOWORK=off")
+
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("go run %s failed: %v\n%s", example.pkg, err, out)
+			}
+
+			got := string(out)
+			for _, want := range example.contains {
+				if !strings.Contains(got, want) {
+					t.Fatalf("go run %s output does not contain %q:\n%s", example.pkg, want, got)
 				}
 			}
 		})
