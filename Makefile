@@ -52,6 +52,10 @@ test: ## Run the test suite and/or any other tests
 		-timeout=15m \
 		$(GO_TEST_PKGS)
 
+.PHONY: binary-sizes
+binary-sizes: ## Build examples with size-optimized flags and print binary sizes
+	go test -run TestExamplesOptimizedBuildSizes -v ./examples
+
 unit.coverprofile: # rule to ensure unit.coverprofile exists
 	@if [ ! -f $@ ]; then \
 		echo "No coverage file found. Running tests to generate coverage data..."; \
