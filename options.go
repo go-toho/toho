@@ -16,9 +16,10 @@ type options struct {
 
 	ctx context.Context
 
-	core    Core
-	logger  any
-	options []any
+	core          Core
+	configPointer any
+	logger        any
+	options       []any
 
 	startTimeout time.Duration
 	stopTimeout  time.Duration
@@ -43,6 +44,12 @@ func AppCore(s Core) Option {
 // Context with app context.
 func Context(ctx context.Context) Option {
 	return func(o *options) { o.ctx = ctx }
+}
+
+// Config uses c as the application's backing config.
+// The pointer must be non-nil and must match the app config type.
+func Config[C any](c *C) Option {
+	return func(o *options) { o.configPointer = c }
 }
 
 // Logger with app logger.

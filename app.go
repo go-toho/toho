@@ -79,7 +79,7 @@ func (a *TohoApp[C, L]) AppInfo() app.Info {
 }
 
 func (a *TohoApp[C, L]) Config() C {
-	return a.config
+	return *a.backingConfig()
 }
 
 func (a *TohoApp[C, L]) Logger() L {
@@ -103,9 +103,14 @@ func (a *TohoApp[C, L]) Start() error {
 			}
 		}
 
+		cfg, err := a.configPointer()
+		if err != nil {
+			return err
+		}
+
 		coreOpts := &CoreOptions{
 			App:           *a.appInfo,
-			ConfigPointer: &a.config,
+			ConfigPointer: cfg,
 			LogPointer:    &a.log,
 			Options:       a.opts.options,
 			StartTimeout:  a.opts.startTimeout,
@@ -140,6 +145,29 @@ func (a *TohoApp[C, L]) Start() error {
 	}
 
 	return nil
+}
+
+func (a *TohoApp[C, L]) backingConfig() *C {
+	if cfg, ok := a.opts.configPointer.(*C); ok && cfg != nil {
+		return cfg
+	}
+	return &a.config
+}
+
+func (a *TohoApp[C, L]) configPointer() (any, error) {
+	if a.opts.configPointer == nil {
+		return &a.config, nil
+	}
+
+	cfg, ok := a.opts.configPointer.(*C)
+	if !ok {
+		return nil, fmt.Errorf("config type %T does not match %s", a.opts.configPointer, reflect.TypeFor[*C]())
+	}
+	if cfg == nil {
+		return nil, errors.New("config pointer is nil")
+	}
+
+	return cfg, nil
 }
 
 // Stop gracefully stops the application.
