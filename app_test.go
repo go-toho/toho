@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,9 +18,13 @@ var errInitFailed = errors.New("init failed")
 
 type fakeCore struct {
 	initErr error
+	init    func(*toho.CoreOptions)
 }
 
-func (c fakeCore) Init(*toho.CoreOptions) error {
+func (c fakeCore) Init(opts *toho.CoreOptions) error {
+	if c.init != nil {
+		c.init(opts)
+	}
 	return c.initErr
 }
 
@@ -104,6 +109,105 @@ func TestStartUnlocksAfterInitError(t *testing.T) {
 }
 
 type valueLogger struct{}
+
+type testConfig struct {
+	Name string
+}
+
+func TestConfigExposesBackingConfig(t *testing.T) {
+	app := toho.NewC[testConfig](
+		toho.AppCore(fakeCore{
+			init: func(opts *toho.CoreOptions) {
+				cfg, ok := opts.ConfigPointer.(*testConfig)
+				if !ok {
+					t.Fatalf("ConfigPointer = %T, want *testConfig", opts.ConfigPointer)
+				}
+				cfg.Name = "loaded"
+			},
+		}),
+	)
+
+	if got := app.Config().Name; got != "" {
+		t.Fatalf("Config().Name = %q, want empty", got)
+	}
+
+	if err := app.Start(); err != nil {
+		t.Fatalf("Start() error = %v, want nil", err)
+	}
+
+	if got := app.Config().Name; got != "loaded" {
+		t.Fatalf("Config().Name = %q, want loaded", got)
+	}
+}
+
+func TestConfigOptionUsesExternalBackingConfig(t *testing.T) {
+	cfg := &testConfig{Name: "initial"}
+	app := toho.NewC[testConfig](
+		toho.Config(cfg),
+		toho.AppCore(fakeCore{
+			init: func(opts *toho.CoreOptions) {
+				got, ok := opts.ConfigPointer.(*testConfig)
+				if !ok {
+					t.Fatalf("ConfigPointer = %T, want *testConfig", opts.ConfigPointer)
+				}
+				if got != cfg {
+					t.Fatalf("ConfigPointer = %p, want %p", got, cfg)
+				}
+				cfg.Name = "loaded"
+			},
+		}),
+	)
+
+	if got := app.Config().Name; got != "initial" {
+		t.Fatalf("Config().Name = %q, want initial", got)
+	}
+
+	if err := app.Start(); err != nil {
+		t.Fatalf("Start() error = %v, want nil", err)
+	}
+
+	if got := app.Config().Name; got != "loaded" {
+		t.Fatalf("Config().Name = %q, want loaded", got)
+	}
+	if got := cfg.Name; got != "loaded" {
+		t.Fatalf("external config Name = %q, want loaded", got)
+	}
+}
+
+type otherConfig struct {
+	Name string
+}
+
+func TestConfigOptionRejectsWrongType(t *testing.T) {
+	app := toho.NewC[testConfig](
+		toho.Config(&otherConfig{}),
+		toho.AppCore(fakeCore{}),
+	)
+
+	err := app.Start()
+	if err == nil {
+		t.Fatal("Start() error = nil, want config type error")
+	}
+	if !strings.Contains(err.Error(), "config type") {
+		t.Fatalf("Start() error = %q, want config type error", err)
+	}
+}
+
+func TestConfigOptionRejectsNilPointer(t *testing.T) {
+	var cfg *testConfig
+	app := toho.NewC[testConfig](
+		toho.Config(cfg),
+		toho.AppCore(fakeCore{}),
+	)
+
+	err := app.Start()
+	if err == nil {
+		t.Fatal("Start() error = nil, want nil config pointer error")
+	}
+	if !strings.Contains(err.Error(), "config pointer is nil") {
+		t.Fatalf("Start() error = %q, want nil config pointer error", err)
+	}
+}
 
 func TestStartDoesNotPanicWithValueLogger(t *testing.T) {
 	app := toho.NewL[valueLogger](toho.AppCore(fakeCore{}))
